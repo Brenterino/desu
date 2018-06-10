@@ -1,5 +1,5 @@
 /*
-    This file is part of Desu: MapleStory v62 Server Emulator
+    This file is part of Lachelein: MapleStory Web Database
     Copyright (C) 2017  Brenterino <therealspookster@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
@@ -19,12 +19,20 @@ package wz.common;
 
 import java.awt.Image;
 import java.awt.Point;
-import java.awt.image.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBuffer;
+import java.awt.image.DataBufferByte;
+import java.awt.image.PixelInterleavedSampleModel;
+import java.awt.image.Raster;
+import java.awt.image.SampleModel;
+import java.awt.image.WritableRaster;
 import java.util.zip.Inflater;
+
+import wz.util.DDSLineReader;
 
 /**
  *
- * @author Brent
+ * @author Brenterino
  */
 public final class PNG {
 
@@ -58,48 +66,46 @@ public final class PNG {
     }
 
     public void inflateData() {
-        int len;
-        int size;
-        int bufSize = height * width * 8;
-        byte[] decBuff = new byte[bufSize > 2 ? bufSize : 2];
-        size = height * width;
+        int len, size;
+        
+        byte[] unc = new byte[height * width * 8];
+        Inflater dec = new Inflater(true);
+        dec.setInput(data, 0, data.length);
+        try {
+        	len = dec.inflate(unc);
+        } catch (Exception e) {
+        	e.printStackTrace();
+            unc = data;
+            len = unc.length;
+        }
+        dec.end();
+        
+        size = len;
         switch (format) {
             case 2:
                 size *= 2;
             case 1:
             case 513:
-                size *= 4;
+                size *= 2;
                 break;
             case 517:
                 size /= 128;
                 break;
             case 1026:
-                // DXT1 Format
-                System.out.println("DXT1 Format is currently unsupported.");
-                break;
+            case 2050:
+            	// DXT3/DXT5
+            	size *= 4;
+            	break;
             default:
                 System.out.println("New image format: " + format);
                 break;
         }
-        byte[] unc = new byte[size];
-        if (size > data.length) {
-            Inflater dec = new Inflater();
-            dec.setInput(data, 0, data.length);
-            try {
-                len = dec.inflate(unc);
-            } catch (Exception e) {
-                unc = data;
-                len = unc.length;
-            }
-            dec.end();
-        } else {
-            unc = data;
-            len = unc.length;
-        }
+        
         int index;
+        byte[] decBuff = new byte[size];
         switch (format) {
             case 1:
-                for (int i = 0; i < size; i++) {
+                for (int i = 0; i < len; i++) {
                     int lo = unc[i] & 0x0F;
                     int hi = unc[i] & 0xF0;
                     index = i << 1;
@@ -137,15 +143,78 @@ public final class PNG {
                     }
                 }
                 break;
+            case 1026:
+            case 2050:
+            	DDSLineReader reader = new DDSLineReader();
+            	
+            	byte[][] line = new byte[4][width];
+            	
+            	for (int y = 0; y < height; y++) {
+            		reader.decodeDXT(unc, format == 1026 ? 3 : 5, line, width, y);
+            		
+            		for (int x = 0; x < width; x++) {
+            			setPixel(decBuff, x, y, width, 
+            					0xFF & line[0][x],
+            					0xFF & line[1][x],
+            					0xFF & line[2][x],
+            					0xFF & line[3][x]);
+            		}
+            	}
+            	break;
         }
         data = decBuff;
+    }
+    
+    private void setPixel(byte[] data, int offset, Color color, int alpha) {
+    	data[offset + 2] = (byte) color.R;    //R
+    	data[offset + 1] = (byte) color.G;    //G
+    	data[offset + 0] = (byte) color.B;    //B
+    	data[offset + 3] = (byte) alpha;      //A
+    }
+    
+    private void setPixel(byte[] data, int x, int y, int width, Color color, int alpha) {
+    	int offset = (y * width + x) * 4;
+
+    	setPixel(data, offset, color, alpha);
+    }
+    
+    private void setPixel(byte[] data, int x, int y, int width, int r, int g, int b, int alpha) {
+    	setPixel(data, x, y, width, new Color(r, g, b), alpha);
+    }
+    
+    private static class Color {
+    	
+    	public int R;
+    	public int G;
+    	public int B;
+    	
+    	public Color(int r, int g, int b) {
+    		this.R = r & 0xFF;
+    		this.G = g & 0xFF;
+    		this.B = b & 0xFF;
+    	}
+    	
+        public int getPixel888()
+        {
+            return (R << 16 | G << 8 | B);
+        }
+    	
+    	public Color premultiply(int alpha) {
+    		double alphaF = alpha / 255.0;
+    		
+    		return new Color(
+    				(int) (R * alphaF),
+    		        (int) (G * alphaF),
+    		        (int) (B * alphaF)        
+    		);
+    	}
     }
 
     private Image createImage() {
         DataBufferByte imgData = new DataBufferByte(data, data.length);
         SampleModel model = new PixelInterleavedSampleModel(DataBuffer.TYPE_BYTE, width, height, 4, width * 4, ZAHLEN);
         WritableRaster raster = Raster.createWritableRaster(model, imgData, new Point(0, 0));
-        BufferedImage ret = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage ret = new BufferedImage(width, height, BufferedImage.TYPE_4BYTE_ABGR);
         ret.setData(raster);
         return ret;
     }
@@ -156,6 +225,14 @@ public final class PNG {
 
     public byte[] rawData() {
         return data;
+    }
+    
+    public int getWidth() {
+    	return width;
+    }
+    
+    public int getHeight() {
+    	return height;
     }
     
     public int getFormat() {

@@ -18,6 +18,7 @@
 package wz;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import wz.io.WzInputStream;
@@ -115,6 +116,6 @@ public abstract class WzObject<E extends WzObject, T extends WzObject<?, ?>> imp
         if (children != null) {
             return children.iterator();
         }
-        return null;
+        return Collections.emptyIterator();
     }
 }

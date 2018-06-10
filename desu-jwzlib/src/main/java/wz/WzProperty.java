@@ -18,15 +18,17 @@
 package wz;
 
 import java.awt.Point;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Objects;
+
 import wz.common.MP3;
 import wz.common.PNG;
 import wz.io.WzInputStream;
 
 /**
  *
- * @author Brent
+ * @author Brenterino
  */
 public final class WzProperty<E> extends WzObject<WzProperty<E>, WzProperty<?>> {
 
@@ -34,16 +36,10 @@ public final class WzProperty<E> extends WzObject<WzProperty<E>, WzProperty<?>> 
     private Type pType;
     private String name;
     private int blocksize;
-    private int location;
     private HashMap<String, WzProperty<?>> children;
 
     public WzProperty(String n, E val, Type p) {
         this(n, val, p, false);
-    }
-    
-    public WzProperty(String n, E val, Type p, int location) {
-    	this(n, val, p, false);
-    	this.location = location;
     }
 
     public WzProperty(String n, E val, Type p, boolean contain) {
@@ -55,10 +51,6 @@ public final class WzProperty<E> extends WzObject<WzProperty<E>, WzProperty<?>> 
         }
     }
 
-    public int getLocation() {
-    	return location;
-    }
-    
     public int getBlocksize() {
         return blocksize;
     }
@@ -82,7 +74,6 @@ public final class WzProperty<E> extends WzObject<WzProperty<E>, WzProperty<?>> 
     public static void parse(WzInputStream in, int offset, WzObject parent) {
         int count = in.readCompressedInteger();
         for (int i = 0; i < count; i++) {
-        	int location = in.getPosition();
             String name = in.readStringBlock(offset);
             int t = in.read();
             switch (t) {
@@ -110,7 +101,7 @@ public final class WzProperty<E> extends WzObject<WzProperty<E>, WzProperty<?>> 
                     }
                     break;
                 case 0x05:
-                    parent.addChild(new WzProperty<>(name, in.readDouble(), Type.DOUBLE, location));
+                    parent.addChild(new WzProperty<>(name, in.readDouble(), Type.DOUBLE));
                     break;
                 case 0x08:
                     parent.addChild(new WzProperty<>(name, in.readStringBlock(offset), Type.STRING));
@@ -125,9 +116,13 @@ public final class WzProperty<E> extends WzObject<WzProperty<E>, WzProperty<?>> 
                     }
                     in.seek(eob);
                     break;
+                case 0x14:
+                	parent.addChild(new WzProperty<>(name, in.readCompressedLong(), Type.COMPRESSED_LONG));
+                	break;
                 default:
-                    System.out.printf("parent=%s,name=%s,offset=%s,pos=%s,t=%s%n",
-                            parent.getName(), name, offset, in.getPosition(), t);
+                	WzObject<?, ?> ancient = parent.getParent();
+                    System.out.printf("ancient=%s,parent=%s,name=%s,offset=%s,pos=%s,t=%s%n",
+                            ancient, parent.getName(), name, offset, in.getPosition(), t);
                     break;
             }
         }
@@ -154,9 +149,28 @@ public final class WzProperty<E> extends WzObject<WzProperty<E>, WzProperty<?>> 
                     int height = in.readCompressedInteger();
                     int format = in.readCompressedInteger() + in.readByte();
                     in.skip(4);
-                    int len = in.readInteger() - 1;
+                    int len = in.readInteger() - 1 - 2;
                     in.skip(1);
-                    byte[] data = in.readBytes(len);
+                    int zHeader = in.readShort() & 0xFFFF;
+                    
+                    // Checks to see if this is a valid zlib header, we will swallow it
+                    // if it's a legit header, we can move on without decoding the image
+                    // buffer
+			        boolean requiresDecryption = zHeader != 0x9C78 && zHeader != 0xDA78 && zHeader != 0x0178 && zHeader != 0x5E78;
+			        
+                    byte[] data;
+			        if (requiresDecryption) {
+			        	in.skip(-2); // skip first block entirely?
+			        	
+			        	int blockSize = in.readInteger();
+			        	
+			        	in.skip(blockSize); // skip first block, most likely header data
+			        	
+			        	data = in.decodeBuffer(len - 2 - blockSize);
+			        } else {
+	                    data = in.readBytes(len);
+			        }
+                    
                     canvas.setValue(new PNG(width, height, format, data));
                     child = canvas;
                     break;
@@ -264,6 +278,7 @@ public final class WzProperty<E> extends WzObject<WzProperty<E>, WzProperty<?>> 
         NULL,
         UNSIGNED_SHORT,
         COMPRESSED_INTEGER,
+        COMPRESSED_LONG,
         BYTE_FLOAT,
         DOUBLE,
         STRING,

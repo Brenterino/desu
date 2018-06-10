@@ -17,6 +17,8 @@
 */
 package wz.io;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.concurrent.atomic.AtomicInteger;
 import wz.common.WzHeader;
 import wz.common.WzTool;
@@ -130,6 +132,22 @@ public abstract class WzInputStream {
             return readInteger();
         }
         return (int) b;
+    }
+    
+    public long readCompressedLong() {
+    	byte b = readByte();
+    	if (b == -128) {
+    		return readLong();
+    	}
+    	return (long) b;
+    }
+    
+    public double readCompressedDouble() {
+    	byte b = readByte();
+    	if (b == -128) {
+    		return readDouble();
+    	}
+    	return (double) b;
     }
 
     public byte[] readBytes(int len) {
@@ -268,4 +286,37 @@ public abstract class WzInputStream {
     public boolean readBool() {
         return readByte() != 0;
     }
+
+	public byte[] decodeBuffer(int len) {
+		byte[] ret;
+		byte[] input = readBytes(len);
+		
+		ByteBuffer in = ByteBuffer.wrap(input);
+		
+		in.order(ByteOrder.LITTLE_ENDIAN);
+		
+		ByteBuffer out = ByteBuffer.allocate(len);
+		
+		int blockSize;
+		while (in.remaining() > 0) {
+			blockSize = in.getInt();
+			
+			if (blockSize > in.remaining() || blockSize < 0) {
+				System.out.println("Critical Error - Block Size for Reading Buffer is Wrong: " + blockSize);
+				break;
+			}
+			
+			for (int i = 0; i < blockSize; i++) {
+				out.put((byte) (in.get() ^ key[i]));
+			}
+		}
+		
+		ret = new byte[out.position()];
+		
+		out.rewind();
+		
+		out.get(ret);
+		
+		return ret;
+	}
 }

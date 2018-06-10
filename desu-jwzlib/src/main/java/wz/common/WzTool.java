@@ -119,7 +119,7 @@ public final class WzTool {
      * @return the WZ key generated.
      */
     public static byte[] generateKey(byte[] iv, byte[] aeskey) {
-        byte[] ret = new byte[0xFFFF];
+        byte[] ret = new byte[0x200000];
         if (BitTool.toInt32(iv) == 0) {
             return ret;
         }
