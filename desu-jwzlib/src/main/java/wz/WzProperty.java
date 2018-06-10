@@ -34,10 +34,16 @@ public final class WzProperty<E> extends WzObject<WzProperty<E>, WzProperty<?>> 
     private Type pType;
     private String name;
     private int blocksize;
+    private int location;
     private HashMap<String, WzProperty<?>> children;
 
     public WzProperty(String n, E val, Type p) {
         this(n, val, p, false);
+    }
+    
+    public WzProperty(String n, E val, Type p, int location) {
+    	this(n, val, p, false);
+    	this.location = location;
     }
 
     public WzProperty(String n, E val, Type p, boolean contain) {
@@ -49,6 +55,10 @@ public final class WzProperty<E> extends WzObject<WzProperty<E>, WzProperty<?>> 
         }
     }
 
+    public int getLocation() {
+    	return location;
+    }
+    
     public int getBlocksize() {
         return blocksize;
     }
@@ -72,6 +82,7 @@ public final class WzProperty<E> extends WzObject<WzProperty<E>, WzProperty<?>> 
     public static void parse(WzInputStream in, int offset, WzObject parent) {
         int count = in.readCompressedInteger();
         for (int i = 0; i < count; i++) {
+        	int location = in.getPosition();
             String name = in.readStringBlock(offset);
             int t = in.read();
             switch (t) {
@@ -99,7 +110,7 @@ public final class WzProperty<E> extends WzObject<WzProperty<E>, WzProperty<?>> 
                     }
                     break;
                 case 0x05:
-                    parent.addChild(new WzProperty<>(name, in.readDouble(), Type.DOUBLE));
+                    parent.addChild(new WzProperty<>(name, in.readDouble(), Type.DOUBLE, location));
                     break;
                 case 0x08:
                     parent.addChild(new WzProperty<>(name, in.readStringBlock(offset), Type.STRING));

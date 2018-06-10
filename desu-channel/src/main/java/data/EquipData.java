@@ -17,13 +17,16 @@
 */
 package data;
 
+import dbf.io.DesuReader;
+import dbf.io.DesuWriter;
+import dbf.unit.Unit;
 import player.item.Item;
 
 /**
  *
  * @author Brent
  */
-public class EquipData {
+public class EquipData implements Unit {
     
     private int id;
     private boolean cash;
@@ -339,4 +342,81 @@ public class EquipData {
     public Item generateEquip(boolean random) { // XXX code
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
+	@Override
+	public void serialize(DesuWriter w) {
+		w.writeInteger(id).writeBool(cash).writeInteger(price).writeBool(tradeBlock);
+		w.writeBool(notSale).writeBool(timeLimited).writeBool(expireOnLogout);
+		w.writeBool(only).writeBool(quest).writeBool(pachinko).writeInteger(slotMax);
+		w.writeInteger(fs).writeInteger(attack).writeInteger(attackSpeed).writeInteger(knockback);
+		w.writeInteger(tamingMob).writeInteger(tuc).writeMapleString(islot).writeMapleString(vslot);
+		
+		w.writeInteger(recovery).writeInteger(hpRecovery).writeInteger(mpRecovery).writeInteger(reqSTR);
+		w.writeInteger(reqDEX).writeInteger(reqINT).writeInteger(reqLUK).writeInteger(reqPOP).writeInteger(regPOP);
+		w.writeInteger(reqLevel).writeInteger(reqJob).writeInteger(incSTR).writeInteger(incDEX).writeInteger(incINT);
+		w.writeInteger(incLUK).writeInteger(incLUk).writeInteger(incSpeed).writeInteger(incJump).writeInteger(incMHP);
+		w.writeInteger(incMMP).writeInteger(incMDD).writeInteger(incPDD).writeInteger(incMMD).writeInteger(incPAD);
+		w.writeInteger(incMAD).writeInteger(incACC).writeInteger(acc).writeInteger(incEVA).writeInteger(incCraft);
+		w.writeInteger(incFatigue).writeInteger(incSwim).writeInteger(incRMAS).writeInteger(incRMAL);
+		w.writeInteger(incRMAI).writeInteger(incRMAF).writeInteger(elemDefault);
+	}
+
+	@Override
+	public void deserialize(DesuReader r) {
+		id = r.readInteger();
+		cash = r.readBool();
+		price = r.readInteger();
+		tradeBlock = r.readBool();
+		notSale = r.readBool();
+		timeLimited = r.readBool();
+		expireOnLogout = r.readBool();
+		only = r.readBool();
+		quest = r.readBool();
+		pachinko = r.readBool();
+		slotMax = r.readInteger();
+		fs = r.readInteger();
+		attack = r.readInteger();
+		attackSpeed = r.readInteger();
+		knockback = r.readInteger();
+		tamingMob = r.readInteger();
+		tuc = r.readInteger();
+		islot = r.readMapleString();
+		vslot = r.readMapleString();
+		recovery = r.readInteger();
+		hpRecovery = r.readInteger();
+		mpRecovery = r.readInteger();
+		reqSTR = r.readInteger();
+		reqDEX = r.readInteger();
+		reqINT = r.readInteger();
+		reqLUK = r.readInteger();
+		reqPOP = r.readInteger();
+		regPOP = r.readInteger();
+		reqLevel = r.readInteger();
+		reqJob = r.readInteger();
+		incSTR = r.readInteger();
+		incDEX = r.readInteger();
+		incINT = r.readInteger();
+		incLUK = r.readInteger();
+		incLUk = r.readInteger();
+		incSpeed = r.readInteger();
+		incJump = r.readInteger();
+		incMHP = r.readInteger();
+		incMMP = r.readInteger();
+		incMDD = r.readInteger();
+		incPDD = r.readInteger();
+		incMMD = r.readInteger();
+		incPAD = r.readInteger();
+		incMAD = r.readInteger();
+		incACC = r.readInteger();
+		acc = r.readInteger();
+		incEVA = r.readInteger();
+		incCraft = r.readInteger();
+		incFatigue = r.readInteger();
+		incSwim = r.readInteger();
+		incRMAS = r.readInteger();
+		incRMAL = r.readInteger();
+		incRMAI = r.readInteger();
+		incRMAF = r.readInteger();
+		elemDefault = r.readInteger();
+	}
 }

@@ -69,6 +69,7 @@ public class FieldChatHandler implements PacketHandler<Client> {
                     Portal toP = to.getPortal(target);
                     assert to != null;
                     p.changeField(to, toP);
+                    
                     return;
                 } catch (Exception e) {
                     c.write(PacketCreator.enableActions());
@@ -82,6 +83,7 @@ public class FieldChatHandler implements PacketHandler<Client> {
                     GameDatabase.getSkill(bId).generatePlayerBuff(level).apply(c);
 
                     c.write(PacketCreator.enableActions());
+                    
                     return;
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -110,6 +112,17 @@ public class FieldChatHandler implements PacketHandler<Client> {
                 int exp = ExperienceTable.forNextLevel(p.getStat(Stat.LEVEL)) - 1;
                 p.changeStat(Stat.EXP, exp);
                 p.applyChangedStats();
+                return;
+            } else if (cmd[0].equalsIgnoreCase("t")) {
+                try {
+                    int id = Integer.parseInt(cmd[1]);
+                    
+                    c.write(PacketCreator.testEffect(id));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    c.write(PacketCreator.enableActions());
+                }
+                return;
             }
         }
 

@@ -20,11 +20,13 @@ package dbf;
 import java.io.File;
 import java.nio.file.Path;
 
+import dbf.unit.Unit;
+
 /**
  *
  * @author Brent
  */
-public final class DesuFile {
+public final class DesuFile<E extends Unit> {
 
     private File storage;
     

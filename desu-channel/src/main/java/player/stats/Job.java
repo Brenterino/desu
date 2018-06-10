@@ -37,15 +37,17 @@ public enum Job {
     DARK_KNIGHT(132, 243),
     
     MAGICIAN(200, 67),
+    
     FP_WIZARD(210, 121),
     FP_MAGE(211, 151),
     FP_ARCH_MAGE(212, 243),
+    
     IL_WIZARD(220, 121),
     IL_MAGE(221, 151),
     IL_ARCH_MAGE(222, 243),
     CLERIC(230, 121),
     PRIEST(231, 151),
-    BISHOP(232, 241),
+    BISHOP(232, 243),
     
     BOWMAN(300, 61),
     HUNTER(310, 121),
@@ -61,7 +63,7 @@ public enum Job {
     NIGHT_LORD(412, 243),
     BANDIT(420, 121),
     CHIEF_BANDIT(421, 151),
-    SHADOWER(422, 241),
+    SHADOWER(422, 243),
     
     PIRATE(500, 61),
     BRAWLER(510, 121),

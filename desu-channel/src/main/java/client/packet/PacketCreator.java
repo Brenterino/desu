@@ -1441,4 +1441,34 @@ public class PacketCreator {
 
         return pw.createPacket();
     }
+    
+    
+    
+    // XXX remove
+    public static Packet testEffect(int id) {
+        PacketWriter pw = new PacketWriter(32);
+
+        pw.writeHeader(SendOpcode.GIVE_BUFF);
+        
+        int[] buffer = new int[4];
+        
+        buffer[id / 32] = 1 << (id % 32);
+        
+        for (int i = 0; i < buffer.length; i++) {
+            pw.writeInteger(buffer[i]);
+        }
+        
+        pw.writeShort(1);
+        pw.writeInteger(Beginner.JUMP_DOWN); // 2081000
+        pw.writeInteger(30);
+        
+        pw.writeShort(0x00);
+
+        pw.writeShort(0x00); // this is delay before applying
+        pw.write(0x00);
+        
+        pw.writeInteger(0x00); // idek
+
+        return pw.createPacket();
+    }
 }

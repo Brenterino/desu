@@ -102,9 +102,14 @@ public abstract class WzInputStream {
     }
 
     public long readLong() {
-        return read() + (read() << 8) + (read() << 16) + (read() << 24)
-                + (read() << 32) + (read() << 40) + (read() << 48)
-                + (read() << 56);
+        return (long) read()        +
+        	  ((long) read() << 8)  +
+        	  ((long) read() << 16) +
+        	  ((long) read() << 24) +
+        	  ((long) read() << 32) +
+        	  ((long) read() << 40) +
+        	  ((long) read() << 48) +
+        	  ((long) read() << 56);
     }
 
     public char readChar() {

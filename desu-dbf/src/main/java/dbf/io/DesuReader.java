@@ -17,8 +17,10 @@
 */
 package dbf.io;
 
-import util.Reader;
+import java.io.IOException;
 import java.io.InputStream;
+
+import util.Reader;
 
 /**
  *
@@ -26,32 +28,58 @@ import java.io.InputStream;
  */
 public class DesuReader extends Reader {
 
+	private int offset = 0;
     private InputStream base;
     
-    
+    public DesuReader() {
+    	// XXX CODE
+    }
     
     @Override
     public int read() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    	try {
+    		return base.read();
+    	} catch (IOException e) {
+    		return -1;
+    	} finally {
+    		offset++;
+    	}
     }
 
     @Override
     public Reader skip(int num) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    	if (num < 1) return this;
+    	
+    	try {
+    		base.skip(num);
+    	} catch (IOException e) {
+    		// swallow
+    	}
+    	offset += num;
+		
+		return this;
     }
 
     @Override
     public int available() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    	try { 
+    		return base.available();
+    	} catch (IOException e) {
+    		return 0;
+    	}
     }
 
     @Override
     public int getOffset() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    	return offset;
     }
 
     @Override
     public void close() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    	try {
+    		base.close();
+    	} catch (IOException e) {
+    		// swallow
+    	}
     }
 }

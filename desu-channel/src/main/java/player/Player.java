@@ -1082,9 +1082,7 @@ public class Player extends FieldLife {
         // XXX foreign effect for level up
         // XXX guild notification
         // XXX party update
-    }
-    
-    
+    }  
 
     public void changeJob(int id) {
         changeStat(JOB, id);
