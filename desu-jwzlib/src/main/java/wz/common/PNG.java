@@ -43,7 +43,7 @@ public final class PNG {
     private Image img = null;
     private boolean inflated = false;
     private static final int[] ZAHLEN = new int[]{0x02, 0x01, 0x00, 0x03};
-
+    
     public PNG(int w, int h, int f, byte[] rD) {
         width = w;
         height = h;
@@ -66,51 +66,45 @@ public final class PNG {
     }
 
     public void inflateData() {
-        int len, size;
-        
-        byte[] unc = new byte[height * width * 8];
-        Inflater dec = new Inflater(true);
-        dec.setInput(data, 0, data.length);
-        try {
-        	len = dec.inflate(unc);
-        } catch (Exception e) {
-        	e.printStackTrace();
-            unc = data;
-            len = unc.length;
-        }
-        dec.end();
-        
-        size = len;
+        int len   = 0;
+        int index = 0;
+        int size  = width * height;
+
         switch (format) {
-            case 2:
-                size *= 2;
-            case 1:
-            case 513:
-                size *= 2;
-                break;
-            case 517:
-                size /= 128;
-                break;
-            case 1026:
-            case 2050:
-            	// DXT3/DXT5
-            	size *= 4;
-            	break;
+        	case    1: size *=   4; break;
+            case    2: size *=   2; break;
+         // case    3: X            break;
+            case  513: size *=   2; break;
+            case  517: size /= 128; break;
+            case 1026: size *=   4; break;
+            case 2050: size *=   4; break;
             default:
                 System.out.println("New image format: " + format);
                 break;
         }
         
-        int index;
+        byte[] unc     = new byte[size];
         byte[] decBuff = new byte[size];
+        
+        Inflater decompress = new Inflater(true);
+
+        decompress.setInput(data, 2, data.length - 2);
+        
+        try {
+        	len = decompress.inflate(unc);
+        } catch (Exception e) {
+        	e.printStackTrace();
+        }
+
+        decompress.end();
+
         switch (format) {
             case 1:
                 for (int i = 0; i < len; i++) {
                     int lo = unc[i] & 0x0F;
                     int hi = unc[i] & 0xF0;
-                    index = i << 1;
-                    decBuff[index] = (byte) (((lo << 4) | lo) & 0xFF);
-                    decBuff[index + 1] = (byte) (hi | (hi >>> 4) & 0x0F);
+                    decBuff[i * 2]     = (byte) (lo | (lo << 4));
+                    decBuff[i * 2 + 1] = (byte) (hi | (hi >> 4));
                 }
                 break;
             case 2:
@@ -161,8 +155,12 @@ public final class PNG {
             		}
             	}
             	break;
+            default:
+                System.out.println("New image format: " + format);
+                break;
         }
         data = decBuff;
+        inflated = true;
     }
     
     private void setPixel(byte[] data, int offset, Color color, int alpha) {
@@ -192,21 +190,6 @@ public final class PNG {
     		this.R = r & 0xFF;
     		this.G = g & 0xFF;
     		this.B = b & 0xFF;
-    	}
-    	
-        public int getPixel888()
-        {
-            return (R << 16 | G << 8 | B);
-        }
-    	
-    	public Color premultiply(int alpha) {
-    		double alphaF = alpha / 255.0;
-    		
-    		return new Color(
-    				(int) (R * alphaF),
-    		        (int) (G * alphaF),
-    		        (int) (B * alphaF)        
-    		);
     	}
     }
 

@@ -18,7 +18,6 @@
 package wz;
 
 import java.awt.Point;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Objects;
 
@@ -36,6 +35,7 @@ public final class WzProperty<E> extends WzObject<WzProperty<E>, WzProperty<?>> 
     private Type pType;
     private String name;
     private int blocksize;
+    private int offset;
     private HashMap<String, WzProperty<?>> children;
 
     public WzProperty(String n, E val, Type p) {
@@ -58,6 +58,14 @@ public final class WzProperty<E> extends WzObject<WzProperty<E>, WzProperty<?>> 
     public void setBlocksize(int sz) {
         blocksize = sz;
     }
+    
+    public int getOffset() {
+    	return offset;
+    }
+    
+    public void setOffset(int offset) {
+    	this.offset = offset;
+    }
 
     public E getValue() {
         return value;
@@ -71,7 +79,7 @@ public final class WzProperty<E> extends WzObject<WzProperty<E>, WzProperty<?>> 
     public void parse(WzInputStream in) {
     }
 
-    public static void parse(WzInputStream in, int offset, WzObject parent) {
+    public static void parse(WzInputStream in, int offset, WzObject<?, WzProperty<?>> parent) {
         int count = in.readCompressedInteger();
         for (int i = 0; i < count; i++) {
             String name = in.readStringBlock(offset);
@@ -140,6 +148,7 @@ public final class WzProperty<E> extends WzObject<WzProperty<E>, WzProperty<?>> 
                     break;
                 case 'C':
                     WzProperty<PNG> canvas = new WzProperty<>(name, null, Type.CANVAS, true);
+                    canvas.setOffset(in.getPosition());
                     in.skip(1);
                     if (in.read() == 1) {
                         in.skip(2);
@@ -149,29 +158,30 @@ public final class WzProperty<E> extends WzObject<WzProperty<E>, WzProperty<?>> 
                     int height = in.readCompressedInteger();
                     int format = in.readCompressedInteger() + in.readByte();
                     in.skip(4);
-                    int len = in.readInteger() - 1 - 2;
-                    in.skip(1);
+                    int len = in.readInteger();
+                    in.skip(1); // nowrap dummy byte
                     int zHeader = in.readShort() & 0xFFFF;
+		        	in.skip(-2); // rewind to include the zHeader in the data buffer
                     
                     // Checks to see if this is a valid zlib header, we will swallow it
                     // if it's a legit header, we can move on without decoding the image
                     // buffer
 			        boolean requiresDecryption = zHeader != 0x9C78 && zHeader != 0xDA78 && zHeader != 0x0178 && zHeader != 0x5E78;
 			        
-                    byte[] data;
+                    byte[] data = null;
 			        if (requiresDecryption) {
-			        	in.skip(-2); // skip first block entirely?
 			        	
 			        	int blockSize = in.readInteger();
 			        	
 			        	in.skip(blockSize); // skip first block, most likely header data
 			        	
-			        	data = in.decodeBuffer(len - 2 - blockSize);
+			        	data = in.decodeBuffer(len - blockSize);
 			        } else {
 	                    data = in.readBytes(len);
 			        }
                     
                     canvas.setValue(new PNG(width, height, format, data));
+                    
                     child = canvas;
                     break;
                 case 'S':
@@ -258,7 +268,7 @@ public final class WzProperty<E> extends WzObject<WzProperty<E>, WzProperty<?>> 
     @Override
     public boolean equals(Object o) {
         if (o instanceof WzProperty) {
-            WzProperty other = (WzProperty) o;
+            WzProperty<?> other = (WzProperty<?>) o;
             return other.pType.equals(pType) && other.name.equals(name)
                     && other.value.equals(value);
         }
